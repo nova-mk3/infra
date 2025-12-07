@@ -11,6 +11,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.retention.time=15d"
+      - "--web.listen-address=:9095"
     network_mode: host
 
   grafana:
