@@ -25,6 +25,8 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     user: "472"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   node_exporter:
     image: prom/node-exporter:v1.8.1
