@@ -2,12 +2,13 @@ version: '3.8'
 
 services:
   prometheus:
-    image: prom/prometheus:v2.53.1
+    image: prom/prometheus:v3.5.3
     container_name: prometheus
+    restart: unless-stopped
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/rules:/etc/prometheus/rules
-      - prom-data:/prometheus
+      - ./prometheus/data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.retention.time=15d"
@@ -15,13 +16,14 @@ services:
     network_mode: host
 
   grafana:
-    image: grafana/grafana:11.0.0
+    image: grafana/grafana:13.0.1
     container_name: grafana
+    restart: unless-stopped
     network_mode: host
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
-      - grafana-data:/var/lib/grafana
+      - ./grafana/data:/var/lib/grafana
     env_file: .env
     user: "472"
     environment:
@@ -29,8 +31,9 @@ services:
       - GF_SERVER_HTTP_PORT=3000
 
   node_exporter:
-    image: prom/node-exporter:v1.8.1
+    image: prom/node-exporter:v1.8.2
     container_name: node-exporter
+    restart: unless-stopped
     pid: host
     network_mode: host
     volumes:
@@ -41,6 +44,7 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
     container_name: cadvisor
+    restart: unless-stopped
     network_mode: host
     volumes:
       - /:/rootfs:ro
@@ -48,6 +52,44 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
 
-volumes:
-  prom-data:
-  grafana-data:
+  mysql_exporter:
+    image: prom/mysqld-exporter:v0.17.2
+    container_name: mysql-exporter
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - DATA_SOURCE_NAME=${MYSQL_USER}:${MYSQL_PASSWORD}@(${MYSQL_HOST})/
+    ports:
+      - "9104:9104"
+
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.82.0
+    container_name: redis-exporter
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - REDIS_ADDR=redis://127.0.0.1:6379
+    ports:
+      - "9121:9121"
+
+  loki:
+    image: grafana/loki:3.7.0
+    container_name: loki
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - ./loki/data:/tmp/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:3.6.9
+    container_name: promtail
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
