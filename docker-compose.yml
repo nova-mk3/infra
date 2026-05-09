@@ -55,11 +55,10 @@ services:
     container_name: mysql-exporter
     restart: unless-stopped
     network_mode: host
-    env_file: .env
+    volumes:
+      - ./mysql-exporter.cnf:/etc/mysql-exporter.cnf:ro
     command:
-      - --mysqld.username=exporter
-      - --mysqld.password=${MYSQL_PASSWORD}
-      - --mysqld.address=${MYSQL_HOST}
+      - --config.my-cnf=/etc/mysql-exporter.cnf
 
   redis_exporter:
     image: oliver006/redis_exporter:v1.82.0
