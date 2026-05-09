@@ -56,8 +56,10 @@ services:
     restart: unless-stopped
     network_mode: host
     env_file: .env
-    environment:
-      DATA_SOURCE_NAME: "${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST})/"
+    command:
+      - --mysqld.username=exporter
+      - --mysqld.password=${MYSQL_PASSWORD}
+      - --mysqld.address=${MYSQL_HOST}
 
   redis_exporter:
     image: oliver006/redis_exporter:v1.82.0
